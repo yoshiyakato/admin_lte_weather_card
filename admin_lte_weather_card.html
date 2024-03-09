@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>天気予報</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/css/adminlte.min.css">
+  <style>
+    .weather-icon {
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+    }
+    .tooltip {
+      position: absolute;
+      background-color: #000;
+      color: #fff;
+      padding: 5px;
+      border-radius: 5px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      margin-top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .weather-icon:hover + .tooltip {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header text-center">
+            <h3 align="center" class="card-title text-center" id="region-name"></h3>
+          </div>
+          <div class="card-body">
+            <div id="forecast" class="text-center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    const jsonCode = "130000";
+    const areaCode = "130010";
+    fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${jsonCode}.json`)
+      .then(response => response.json())
+      .then(data => {
+        const area = data[0].timeSeries[0].areas.find(a => a.area.code === areaCode);
+
+        if (area) {
+          document.getElementById("region-name").textContent = `${area.area.name}の天気予報`;
+
+          let forecastHtml = "<div class='row justify-content-center'>";
+
+          for (let i = 0; i < area.weatherCodes.length; i++) {
+            const dateTime = new Date(data[0].timeSeries[0].timeDefines[i]);
+            const weather = area.weathers[i];
+            const weatherCode = area.weatherCodes[i];
+            const imageUrl = `https://www.jma.go.jp/bosai/forecast/img/${weatherCode}.svg`;
+
+            const month = dateTime.getMonth() + 1;
+            const day = dateTime.getDate();
+            const formattedDate = `${month}月${day}日`;
+
+            forecastHtml += `
+              <div class="col-md-4">
+                <div class="position-relative">
+                  <img src="${imageUrl}" alt="${weather}" class="weather-icon mx-auto d-block">
+                  <div class="tooltip">${weather}</div>
+                </div>
+                <p>${formattedDate}</p>
+              </div>
+            `;
+          }
+
+          forecastHtml += "</div>";
+          document.getElementById("forecast").innerHTML = forecastHtml;
+        } else {
+          document.getElementById("region-name").textContent = "天気予報が見つかりませんでした";
+          document.getElementById("forecast").innerHTML = "";
+        }
+      });
+  </script>
+</body>
+</html>
