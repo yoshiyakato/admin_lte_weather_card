@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -115,11 +115,12 @@
         fetch(
           `https://www.jma.go.jp/bosai/forecast/data/overview_forecast/${jsonCode}.json`
         ),
+        fetch("weathercode.json"),
       ])
         .then((responses) =>
           Promise.all(responses.map((response) => response.json()))
         )
-        .then(([forecastData, overviewData]) => {
+        .then(([forecastData, overviewData, weatherCodeData]) => {
           const area = forecastData[0].timeSeries[0].areas.find(
             (a) => a.area.code === areaCode
           );
@@ -137,21 +138,31 @@
               );
               const weather = area.weathers[i];
               const weatherCode = area.weatherCodes[i];
-              const imageUrl = `https://www.jma.go.jp/bosai/forecast/img/${weatherCode}.svg`;
+
+              // weatherCodeからsvgファイル名を取得
+              const svgInfo = weatherCodeData[weatherCode];
+              let svgFileName;
+              if (i === 0 && dateTime.getHours() >= 18) {
+                svgFileName = svgInfo[1]; // 18時以降は2つ目のsvgファイル名を使用
+              } else {
+                svgFileName = svgInfo[0]; // それ以外は1つ目のsvgファイル名を使用
+              }
+
+              const imageUrl = `https://www.jma.go.jp/bosai/forecast/img/${svgFileName}`;
 
               const month = dateTime.getMonth() + 1;
               const day = dateTime.getDate();
               const formattedDate = `${month}月${day}日`;
 
               forecastHtml += `
-           <div class="forecast-item">
-             <div class="position-relative">
-               <img src="${imageUrl}" alt="${weather}" class="weather-icon mx-auto d-block">
-               <div class="tooltip">${weather}</div>
-             </div>
-             <p>${formattedDate}</p>
-           </div>
-         `;
+                <div class="forecast-item">
+                  <div class="position-relative">
+                    <img src="${imageUrl}" alt="${weather}" class="weather-icon mx-auto d-block">
+                    <div class="tooltip">${weather}</div>
+                  </div>
+                  <p>${formattedDate}</p>
+                </div>
+              `;
             }
 
             document.getElementById("forecast").innerHTML = forecastHtml;
