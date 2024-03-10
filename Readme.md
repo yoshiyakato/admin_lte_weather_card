@@ -55,6 +55,11 @@ jsonが表示されたら目的のareaを探しareas.area.code に該当する�
 
 - [日本気象庁 天気予報API](https://www.jma.go.jp/bosai/forecast/) - 天気予報データの取得に使用
 
+## 参考情報
+
+- [気象庁のAPIを紹介するツイート](https://twitter.com/izutorishima/status/1364455657169031169) - 
+- [気象庁JSON ファイルにある weatherCode 一覧](https://www.t3a.jp/blog/web-develop/weather-code-list/) -
+
 ## 注意事項
 
 - このプログラムは、日本気象庁の天気予報APIに依存しています。APIの仕様変更や停止によって、プログラムが正しく動作しなくなる可能性があります。

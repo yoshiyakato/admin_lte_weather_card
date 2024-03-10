@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>天気予報</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/css/adminlte.min.css"
+    />
+    <style>
+      .weather-icon {
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+      }
+      .tooltip {
+        position: absolute;
+        background-color: #000;
+        color: #fff;
+        padding: 5px;
+        border-radius: 5px;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        margin-top: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+      }
+      .weather-icon:hover + .tooltip {
+        opacity: 1;
+      }
+      .forecast-box {
+        cursor: pointer;
+      }
+      .forecast-box .tooltip {
+        display: none;
+        position: absolute;
+        background-color: #000;
+        color: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        margin-top: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: normal;
+        width: 300px;
+        z-index: 1000;
+      }
+      .forecast-box:hover .tooltip {
+        display: block;
+        opacity: 1;
+      }
+      .forecast-container {
+        display: flex;
+        justify-content: center;
+      }
+      .forecast-item {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+      }
+      .divider {
+        border-top: 1px solid #fff;
+        margin: 5px 0;
+      }
+      .detail-button {
+        background-color: #fff;
+        color: #000;
+        border: 1px solid #000;
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title text-center" id="region-name"></h3>
+            </div>
+            <div class="card-body">
+              <div id="forecast" class="forecast-container"></div>
+              <div class="text-center mt-3">
+                <button class="detail-button forecast-box">
+                  詳細
+                  <div class="tooltip">
+                    <div id="headline-text"></div>
+                    <div class="divider"></div>
+                    <div id="forecast-text"></div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const jsonCode = "130000";
+      const areaCode = "130010";
+
+      Promise.all([
+        fetch(
+          `https://www.jma.go.jp/bosai/forecast/data/forecast/${jsonCode}.json`
+        ),
+        fetch(
+          `https://www.jma.go.jp/bosai/forecast/data/overview_forecast/${jsonCode}.json`
+        ),
+        fetch("weathercode.json"),
+      ])
+        .then((responses) =>
+          Promise.all(responses.map((response) => response.json()))
+        )
+        .then(([forecastData, overviewData, weatherCodeData]) => {
+          const area = forecastData[0].timeSeries[0].areas.find(
+            (a) => a.area.code === areaCode
+          );
+
+          if (area) {
+            document.getElementById(
+              "region-name"
+            ).textContent = `${area.area.name}の天気予報`;
+
+            let forecastHtml = "";
+
+            for (let i = 0; i < area.weatherCodes.length; i++) {
+              const dateTime = new Date(
+                forecastData[0].timeSeries[0].timeDefines[i]
+              );
+              const weather = area.weathers[i];
+              const weatherCode = area.weatherCodes[i];
+
+              // weatherCodeからsvgファイル名を取得
+              const svgInfo = weatherCodeData[weatherCode];
+              let svgFileName;
+              if (i === 0 && dateTime.getHours() >= 18) {
+                svgFileName = svgInfo[1]; // 18時以降は2つ目のsvgファイル名を使用
+              } else {
+                svgFileName = svgInfo[0]; // それ以外は1つ目のsvgファイル名を使用
+              }
+
+              const imageUrl = `https://www.jma.go.jp/bosai/forecast/img/${svgFileName}`;
+
+              const month = dateTime.getMonth() + 1;
+              const day = dateTime.getDate();
+              const formattedDate = `${month}月${day}日`;
+
+              forecastHtml += `
+                <div class="forecast-item">
+                  <div class="position-relative">
+                    <img src="${imageUrl}" alt="${weather}" class="weather-icon mx-auto d-block">
+                    <div class="tooltip">${weather}</div>
+                  </div>
+                  <p>${formattedDate}</p>
+                </div>
+              `;
+            }
+
+            document.getElementById("forecast").innerHTML = forecastHtml;
+
+            document.getElementById("headline-text").textContent =
+              overviewData.headlineText;
+            document.getElementById("forecast-text").textContent =
+              overviewData.text;
+          } else {
+            document.getElementById("region-name").textContent =
+              "天気予報が見つかりませんでした";
+            document.getElementById("forecast").innerHTML = "";
+            document.getElementById("headline-text").textContent = "";
+            document.getElementById("forecast-text").textContent = "";
+          }
+        });
+    </script>
+  </body>
+</html>
